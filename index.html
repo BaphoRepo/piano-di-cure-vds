@@ -81,7 +81,7 @@ button,input,select{font:inherit;color:inherit}
 .grp h3{margin:2px 0 6px;font-family:var(--f-cond);font-style:italic;font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brand);display:flex;align-items:center;gap:8px}
 .grp h3 .cnt{font-style:normal;font-weight:500;color:var(--ui-muted);letter-spacing:0;text-transform:none;font-family:var(--f-ui)}
 .empty{font-size:12.5px;color:var(--ui-muted);margin:0 0 6px}
-.row{display:grid;grid-template-columns:54px 104px minmax(0,1fr) auto;grid-template-areas:"q t d x" "z z p n";gap:6px 8px;
+.row{display:grid;grid-template-columns:54px 122px minmax(0,1fr) auto;grid-template-areas:"q t d x" "z z p n";gap:6px 8px;
   padding:8px 0;border-bottom:1px dashed var(--ui-line);align-items:end}
 .row:last-of-type{border-bottom:0}
 .row .a-q{grid-area:q}.row .a-t{grid-area:t}.row .a-d{grid-area:d}.row .a-x{grid-area:x;display:flex;gap:3px}
@@ -113,6 +113,7 @@ button,input,select{font:inherit;color:inherit}
 .seg button{border:0;background:transparent;padding:6px 11px;font-weight:600;cursor:pointer;letter-spacing:.04em}
 .seg button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink)}
 .row .a-e{grid-column:1 / -1}
+.inp.pack{resize:vertical;min-height:64px;line-height:1.4;font:inherit}
 .inp.missing{border-color:var(--danger)}
 .lst td:last-child{width:34px}
 .lstwrap{max-height:340px;overflow:auto;border:1px solid var(--ui-line);border-radius:6px}
@@ -173,6 +174,7 @@ details[open]>summary h2::after{content:"▾"}
 .tbl td.s{text-align:right;color:var(--d-navy);font-style:italic;padding-right:2.6mm}
 .tbl td.n{text-align:right;font-weight:700;padding-right:.4mm}
 .tbl .pf{color:var(--d-blue)}
+.tbl .pk{padding-left:3mm;font-weight:600}
 .tbl tr.sp td{height:calc(.9mm + 2.5mm*var(--ls));line-height:0}
 .tbl tr.vt td{color:var(--d-orange);font-weight:700;font-size:calc(9.5pt*var(--fs));padding-top:calc(.4mm*var(--ls))}
 .tbl tr.ar td{font-style:italic;font-weight:800;font-size:max(6.6pt,calc(7.3pt*var(--fs)));line-height:calc(var(--lh) - .02);letter-spacing:.01em;color:#1b2533;padding-top:calc(.35mm*var(--ls))}
@@ -366,7 +368,7 @@ function dataLunga(iso){if(!iso)return "";const [y,m,d]=iso.split("-").map(Numbe
 function fullName(){return [Q.cognome.trim().toUpperCase(),Q.nome.trim()].filter(Boolean).join(" ")}
 function calc(r){const q=num(r.qta),p=num(r.prezzo),s=num(r.sconto);const gross=q*p;let disc=r.mode==="pct"?gross*s/100:r.mode==="tot"?s:q*s;
   disc=Math.max(0,Math.min(disc,gross));return {gross,disc,net:gross-disc}}
-function prefix(r,c){if(r.tipo==="none")return "";if(r.tipo==="SCONTO"||r.tipo==="OMAGGIO")return r.tipo;
+function prefix(r,c){if(r.tipo==="none")return "";if(r.tipo==="PROMO")return "PROMOZIONE";if(r.tipo==="SCONTO"||r.tipo==="OMAGGIO")return r.tipo;
   if(c.gross>0&&c.disc>0&&c.disc>=c.gross-0.005)return "OMAGGIO";if(c.disc>0)return "SCONTO";return ""}
 /* giorni: un numero ("5") oppure un intervallo ("7-10") */
 function giorniTxt(v){const s=String(v.giorni??"").trim().replace(/\s*[-–]\s*/g,"-");if(!s)return null;
@@ -465,21 +467,26 @@ function attesaDoc(s){s=String(s||"").trim().toUpperCase();if(isEN())ATTESA_EN.f
 function visitTitleDoc(v,i){if(!isEN())return visitTitle(v,i);const t=tx(),g=giorniTxt(v);
   const perm=g?(t.stay+" "+g.n+" "+(g.one?t.day:t.days)):"";const at=attesaDoc(v.attesa);const parts=[];if(i>0&&at)parts.push(t.wait+" "+at);if(perm)parts.push(perm);
   return (ORD_EN[i]||((i+1)+"TH"))+" "+t.visit+(parts.length?" ("+parts.join(" :: ")+")":"")}
-function prefixDoc(r,c){const p=prefix(r,c);if(!isEN())return p;return p==="SCONTO"?TX.en.pfDisc:p==="OMAGGIO"?TX.en.pfFree:""}
+function prefixDoc(r,c){const p=prefix(r,c);if(!isEN())return p;return p==="SCONTO"?TX.en.pfDisc:p==="OMAGGIO"?TX.en.pfFree:p==="PROMOZIONE"?"PROMOTION":""}
 function listinoEn(desc){const k=String(desc||"").trim().toLowerCase();if(!k)return "";
   const m=L.find(x=>x.desc.trim().toLowerCase()===k&&String(x.descEn||"").trim());if(m)return m.descEn.trim();
   const d=LISTINO_DEFAULT.find(x=>x.desc.trim().toLowerCase()===k);return d?d.descEn:""}
 function descEnOf(r){return String(r.descEn||"").trim()||listinoEn(r.desc)}
 function descDoc(r){if(!isEN())return r.desc;return descEnOf(r)||r.desc}
-function missingEn(){const out=[];Q.visite.forEach(v=>v.righe.forEach(r=>{if(String(r.desc||"").trim()&&!descEnOf(r))out.push(r.desc)}));return [...new Set(out)]}
+function missingEn(){const out=[];Q.visite.forEach(v=>v.righe.forEach(r=>{if(String(r.desc||"").trim()&&!descEnOf(r))out.push(r.desc);if(packMissingEn(r))out.push("contenuto di "+(r.desc||"pacchetto"))}));return [...new Set(out)]}
 function promoLabelDoc(){if(!isEN())return (Q.promoLabel||"PROMOZIONE").toUpperCase();
   const en=String(Q.promoLabelEn||"").trim();if(en)return en.toUpperCase();
   const it=String(Q.promoLabel||"").trim().toUpperCase();return !it||it==="PROMOZIONE"?"PROMOTION":it}
 
 /* ---------- documento ---------- */
+/* contenuto di un pacchetto: una voce per riga */
+function packLines(r){const it=String(r.pacchetto||""),en=String(r.pacchettoEn||"");
+  const s=(isEN()&&en.trim())?en:it;return s.split(/\r?\n/).map(x=>x.trim()).filter(Boolean)}
+function packMissingEn(r){return String(r.pacchetto||"").trim()&&!String(r.pacchettoEn||"").trim()}
 function rowHTML(r){const c=calc(r);const pf=prefixDoc(r,c);const t=teeth(r.denti);
   const desc=esc(descDoc(r))+(t.length?" ["+esc(t.join(","))+"]":"");
-  return `<tr><td class="q">${esc(r.qta)}</td><td class="d">${pf?`<span class="pf">${pf} - </span>`:""}${desc}</td>`+
+  const pk=packLines(r).map(x=>`<div class="pk">${esc(x)}</div>`).join("");
+  return `<tr><td class="q">${esc(r.qta)}</td><td class="d">${pf?`<span class="pf">${pf} - </span>`:""}${desc}${pk}</td>`+
     `<td class="g">${eurD(c.gross)}</td><td class="s">${c.disc>0?"-"+eurD(c.disc):""}</td><td class="n">${eurD(c.net)}</td></tr>`}
 function buildDoc(){
   const name=fullName();const T=totals();const t=tx();
@@ -553,7 +560,7 @@ function rowEditor(r,vi){const c=calc(r);
   return `<div class="row" data-v="${vi}" data-id="${r.id}">
     <label class="fld a-q"><span>Q.tà</span><input class="inp num" data-f="qta" inputmode="decimal" value="${esc(r.qta)}"></label>
     <label class="fld a-t"><span>Etichetta</span><select class="inp" data-f="tipo">
-      ${[["auto","Auto"],["none","Nessuna"],["SCONTO","SCONTO"],["OMAGGIO","OMAGGIO"]].map(([v,l])=>`<option value="${v}"${r.tipo===v?" selected":""}>${l}</option>`).join("")}</select></label>
+      ${[["auto","Auto"],["none","Nessuna"],["SCONTO","SCONTO"],["OMAGGIO","OMAGGIO"],["PROMO","PROMOZIONE"]].map(([v,l])=>`<option value="${v}"${r.tipo===v?" selected":""}>${l}</option>`).join("")}</select></label>
     <label class="fld a-d"><span>Descrizione del lavoro</span><input class="inp" data-f="desc" list="dlListino" value="${esc(r.desc)}" placeholder="Scrivi o scegli dal listino"></label>
     <div class="a-x"><button class="btn icon ghost" data-act="up" title="Sposta su" type="button">↑</button><button class="btn icon ghost" data-act="down" title="Sposta giù" type="button">↓</button><button class="btn icon ghost danger" data-act="del" title="Elimina riga" type="button">✕</button></div>
     <label class="fld a-z"><span>Denti</span><input class="inp" data-f="denti" value="${esc(r.denti)}" placeholder="es. 16,14,24"></label>
@@ -563,6 +570,8 @@ function rowEditor(r,vi){const c=calc(r);
     <div class="net a-n" data-net>${netCell(c)}</div>
     ${isEN()?(()=>{const le=listinoEn(r.desc);const miss=!String(r.descEn||"").trim()&&!le;
       return `<label class="fld a-e"><span>Descrizione in inglese${String(r.descEn||"").trim()?"":le?" · dal listino":""}</span><input class="inp${miss?" missing":""}" data-f="descEn" value="${esc(r.descEn||"")}" placeholder="${esc(le||"Traduzione mancante: scrivila qui o aggiungila al listino")}"></label>`})():""}
+    ${r.tipo==="PROMO"||String(r.pacchetto||"").trim()?`<label class="fld a-e"><span>Contenuto del pacchetto · una voce per riga</span><textarea class="inp pack" data-f="pacchetto" rows="${Math.max(3,String(r.pacchetto||"").split("\n").length+1)}" placeholder="4 impianti osteointegrati MEGAGEN anyRidge&#10;4 monconi implantari Multi-Unit MEGAGEN&#10;…">${esc(r.pacchetto||"")}</textarea></label>
+      ${isEN()?`<label class="fld a-e"><span>Contenuto del pacchetto in inglese</span><textarea class="inp pack${packMissingEn(r)?" missing":""}" data-f="pacchettoEn" rows="${Math.max(3,String(r.pacchettoEn||r.pacchetto||"").split("\n").length+1)}" placeholder="Una voce per riga, nello stesso ordine">${esc(r.pacchettoEn||"")}</textarea></label>`:""}`:""}
   </div>`}
 function netCell(c){return `<small>${c.disc>0?eur(c.gross)+" − "+eur(c.disc):"Totale riga"}</small>${eur(c.net)}`}
 const GROUPS=[["gen","Trattamenti generali"],["sup","Arcata superiore"],["inf","Arcata inferiore"]];
@@ -596,7 +605,7 @@ function renderEditor(){
       ${GROUPS.map(([g,label])=>{const rs=v.righe.filter(r=>r.g===g);
         return `<div class="grp"><h3>${label}<span class="cnt">${rs.length?rs.length+(rs.length===1?" riga":" righe"):""}</span></h3>
           ${rs.length?rs.map(r=>rowEditor(r,vi)).join(""):`<p class="empty">Nessun trattamento.</p>`}
-          <div class="addrow"><button class="btn small" data-act="addRow" data-v="${vi}" data-g="${g}" type="button">+ Trattamento</button>
+          <div class="addrow"><button class="btn small" data-act="addRow" data-v="${vi}" data-g="${g}" type="button">+ Trattamento</button><button class="btn small ghost" data-act="addPack" data-v="${vi}" data-g="${g}" type="button">+ Pacchetto promozione</button>
           ${g==="gen"&&vi>0&&!v.righe.some(r=>/Scansione intraorale/.test(r.desc))?`<button class="btn small ghost" data-act="addScan" data-v="${vi}" type="button">+ Scansione intraorale (omaggio)</button>`:""}
           ${g==="gen"&&vi===0&&!v.righe.some(r=>/Consulenza, prima visita/.test(r.desc))?`<button class="btn small ghost" data-act="addStd" data-v="${vi}" type="button">+ Pacchetto prima visita</button>`:""}</div>
         </div>`}).join("")}
@@ -663,6 +672,9 @@ ED.addEventListener("input",e=>{const t=e.target;
       const after=calc(r).disc;if(Math.abs(after-before)>=0.005)toast("Sconto arrotondato: ora è "+eur(after)+" invece di "+eur(before)+". Controlla il valore.")}}
   r[t.dataset.f]=t.value;
   if(t.dataset.f==="qta")r.qLock=true;
+  if(t.dataset.f==="tipo"){Q.esempio=false;persist();renderEditor();renderDoc();return}
+  if(t.dataset.f==="pacchettoEn")t.classList.toggle("missing",packMissingEn(r));
+  if(t.classList.contains("pack")){t.style.height="auto";t.style.height=(t.scrollHeight+2)+"px"}
   if(t.dataset.f==="denti"){const n=teeth(t.value).length;if(n&&(!r.qLock||num(r.qta)===0||r._auto)){r.qta=String(n);r._auto=true;rowEl.querySelector('[data-f="qta"]').value=r.qta}}
   if(t.dataset.f==="desc"){const m=L.find(x=>x.desc.trim().toLowerCase()===t.value.trim().toLowerCase());
     if(m){r.prezzo=m.prezzo;r.sconto=m.sconto;r.mode="eur";r.descEn="";rowEl.querySelector('[data-f="prezzo"]').value=r.prezzo;rowEl.querySelector('[data-f="sconto"]').value=r.sconto;rowEl.querySelector('[data-f="mode"]').value="eur"}}
@@ -685,6 +697,8 @@ ED.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b)ret
     if(a==="up"||a==="down"){const dir=a==="up"?-1:1;let j=f.i+dir;while(j>=0&&j<arr.length&&arr[j].g!==f.r.g)j+=dir;
       if(j>=0&&j<arr.length){[arr[f.i],arr[j]]=[arr[j],arr[f.i]]}}
     changed(true);return}
+  if(a==="addPack"){const r=R(b.dataset.g,1,"",0,0);r.tipo="PROMO";r.pacchetto="";Q.visite[vi].righe.push(r);changed(true);
+    setTimeout(()=>{const el=ED.querySelector(`.row[data-id="${r.id}"] [data-f="desc"]`);if(el){el.placeholder="Nome del pacchetto, es. Arcata carico immediato ‘MEGAGEN ALL-ON-FOUR’";el.focus()}},0);return}
   if(a==="addRow"){const r=R(b.dataset.g,1,"",0,0);r.qLock=false;Q.visite[vi].righe.push(r);changed(true);
     setTimeout(()=>{const el=ED.querySelector(`.row[data-id="${r.id}"] [data-f="desc"]`);if(el)el.focus()},0);return}
   if(a==="addScan"){Q.visite[vi].righe.unshift(R("gen",1,"Scansione intraorale e prova della protesi di riferimento",400,400));changed(true);return}
@@ -780,7 +794,8 @@ async function buildXlsx(){
     ["gen","sup","inf"].forEach(g=>{const rs=v.righe.filter(r=>r.g===g);if(!rs.length)return;
       if(g!=="gen")L.push({k:"a",text:g==="sup"?TT.up:TT.low});
       rs.forEach(r=>{const c=calc(r),pf=prefixDoc(r,c),t=teeth(r.denti);
-        L.push({k:"i",q:num(r.qta),text:(pf?pf+" - ":"")+descDoc(r)+(t.length?" ["+t.join(",")+"]":""),g:c.gross,d:c.disc,n:c.net})})})});
+        L.push({k:"i",q:num(r.qta),text:(pf?pf+" - ":"")+descDoc(r)+(t.length?" ["+t.join(",")+"]":""),g:c.gross,d:c.disc,n:c.net});
+        packLines(r).forEach(x=>L.push({k:"s",text:"     "+x}))})})});
   const promo=T.p>0;
   const BLOCK=25,BLOCK_H=396;
   const M=Math.max(L.length,BLOCK);
@@ -819,6 +834,7 @@ async function buildXlsx(){
     if(!l)c=E("I"+r,8)+E("J"+r,17)+E("K"+r,17)+E("L"+r,17)+E("M"+r,17)+E("N"+r,8)+E("O"+r,8)+E("P"+r,9);
     else if(l.k==="t"){c=E("I"+r,8)+S("J"+r,19,l.text)+"KLMNOP".split("").map(x=>E(x+r,19)).join("");merges.push(`J${r}:P${r}`)}
     else if(l.k==="a"){c=E("I"+r,8)+S("J"+r,20,l.text)+E("K"+r,20)+E("L"+r,20)+E("M"+r,20)+E("N"+r,8)+E("O"+r,8)+E("P"+r,9);merges.push(`J${r}:M${r}`)}
+    else if(l.k==="s"){c=E("I"+r,8)+S("J"+r,17,l.text)+E("K"+r,17)+E("L"+r,17)+E("M"+r,17)+E("N"+r,8)+E("O"+r,8)+E("P"+r,9);merges.push(`J${r}:M${r}`)}
     else{c=N("I"+r,8,l.q)+S("J"+r,17,l.text)+E("K"+r,17)+E("L"+r,17)+E("M"+r,17)+N("N"+r,11,l.g)+(l.d>0?N("O"+r,11,-l.d):E("O"+r,8))+N("P"+r,12,l.n);merges.push(`J${r}:M${r}`)}
     out+=ROW(r,c+QX(r),hs)}
   const lastItem=R0-1;
