@@ -59,9 +59,9 @@ button,input,select{font:inherit;color:inherit}
 
 /* ---------- editor ---------- */
 .sec{background:var(--ui-panel);border:1px solid var(--ui-line);border-radius:8px;margin-bottom:14px}
-.sec>h2{margin:0;padding:10px 14px;font-family:var(--f-cond);font-size:13px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+.sec>h2,.sec>summary>h2{margin:0;padding:10px 14px;font-family:var(--f-cond);font-size:13px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
   color:var(--brand);border-bottom:1px solid var(--ui-line);display:flex;align-items:center;gap:8px}
-.sec>h2 .sp{margin-left:auto;display:flex;gap:6px;letter-spacing:0;text-transform:none;font-family:var(--f-ui)}
+.sec>h2 .sp,.sec>summary>h2 .sp{margin-left:auto;display:flex;gap:6px;letter-spacing:0;text-transform:none;font-family:var(--f-ui)}
 .secb{padding:12px 14px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 12px}
 .fld{display:flex;flex-direction:column;gap:3px;min-width:0}
@@ -113,6 +113,13 @@ button,input,select{font:inherit;color:inherit}
 .seg button{border:0;background:transparent;padding:6px 11px;font-weight:600;cursor:pointer;letter-spacing:.04em}
 .seg button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink)}
 .row .a-e{grid-column:1 / -1}
+.impbar{border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--ui-panel));border-radius:6px;padding:9px 11px;margin:0 0 10px;font-size:13px}
+.pklist{display:grid;gap:10px}
+.pkitem{border:1px solid var(--ui-line);border-radius:7px;padding:10px}
+.pkfoot{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:end;margin-top:8px}
+.pkfoot .fld{width:140px}
+.pkfoot .btn{margin-left:auto}
+@media (max-width:560px){.pkitem .grid{grid-template-columns:1fr!important}}
 .inp.pack{resize:vertical;min-height:64px;line-height:1.4;font:inherit}
 .inp.missing{border-color:var(--danger)}
 .lst td:last-child{width:34px}
@@ -273,6 +280,7 @@ details[open]>summary h2::after{content:"▾"}
 </div>
 
 <datalist id="dlListino"></datalist>
+<datalist id="dlPack"></datalist>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -354,8 +362,97 @@ Q=lsGet(LS_Q)||exampleQuote();
 L=lsGet(LS_L)||LISTINO_DEFAULT.map(x=>({...x}));
 function fillListinoEn(list){(list||[]).forEach(x=>{if(x.descEn===undefined){const d=LISTINO_DEFAULT.find(y=>y.desc.trim().toLowerCase()===String(x.desc||"").trim().toLowerCase());x.descEn=d?d.descEn:""}});return list}
 fillListinoEn(L);if(!Q.lang)Q.lang="it";
+/* ---------- listino pacchetti promozione ---------- */
+const LS_P="vds.pacchetti.v1";
+const PACCHETTI_DEFAULT=[{desc:"Arcata carico immediato ‘MEGAGEN ALL-ON-FOUR’",descEn:"Immediate-loading arch ‘MEGAGEN ALL-ON-FOUR’",
+  pacchetto:"4 impianti osteointegrati MEGAGEN anyRidge\n4 monconi implantari Multi-Unit MEGAGEN\nTrattamento Plasma X-Motion per 4 impianti\n10 corone in PMMA CAD/CAM su protesi fissa provvisoria",
+  pacchettoEn:"4 MEGAGEN anyRidge osseointegrated implants\n4 MEGAGEN Multi-Unit implant abutments\nPlasma X-Motion treatment for 4 implants\n10 CAD/CAM PMMA crowns on temporary fixed prosthesis",
+  prezzo:"3200",sconto:"0"}];
+let P=lsGet(LS_P)||PACCHETTI_DEFAULT.map(x=>({...x}));
+const keyOf=s=>String(s||"").trim().toLowerCase();
+function findPack(desc){const k=keyOf(desc);return k?P.find(x=>keyOf(x.desc)===k):null}
+function fillDatalists(){const a=document.getElementById("dlListino"),b=document.getElementById("dlPack");
+  if(a)a.innerHTML=L.map(x=>`<option value="${esc(x.desc)}">`).join("");if(b)b.innerHTML=P.map(x=>`<option value="${esc(x.desc)}">`).join("")}
+
+/* ---------- CSV (separatore ; · UTF-8 con BOM · decimali con la virgola: si apre bene in Excel) ---------- */
+function csvParse(text){text=String(text).replace(/^﻿/,"");
+  const first=(text.split(/\r?\n/).find(l=>l.trim())||"");const cnt=c=>first.split(c).length-1;
+  const sep=cnt("\t")>cnt(";")&&cnt("\t")>cnt(",")?"\t":cnt(";")>=cnt(",")?";":",";
+  const rows=[];let row=[],f="",q=false;
+  for(let i=0;i<text.length;i++){const ch=text[i];
+    if(q){if(ch==='"'){if(text[i+1]==='"'){f+='"';i++}else q=false}else f+=ch;continue}
+    if(ch==='"'&&f==="")q=true;else if(ch===sep){row.push(f);f=""}
+    else if(ch==="\n"){row.push(f.replace(/\r$/,""));rows.push(row);row=[];f=""}
+    else f+=ch}
+  if(f!==""||row.length){row.push(f.replace(/\r$/,""));rows.push(row)}
+  return rows.filter(r=>r.some(c=>String(c).trim()!==""))}
+function csvCell(v){v=String(v??"");return /[;"\r\n]|^\s|\s$/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+function csvBuild(rows){return "﻿"+rows.map(r=>r.map(csvCell).join(";")).join("\r\n")+"\r\n"}
+const numCsv=v=>{const n=num(v);return Number.isInteger(n)?String(n):String(Math.round(n*100)/100).replace(".",",")};
+const normH=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+const isEnH=h=>/\b(eng|en|english|inglese|ing)\b/.test(h);
+const CSV_TR=["DESCRIZIONE ITA","DESCRIZIONE ENG","PREZZO UNITARIO","SCONTO UNITARIO"];
+const CSV_PK=["DESCRIZIONE DEL LAVORO ITA","DESCRIZIONE DEL LAVORO ENG","CONTENUTO DEL PACCHETTO","CONTENUTO DEL PACCHETTO ENG","PREZZO UNITARIO","SCONTO UNITARIO"];
+function csvMap(header,kind){const h=header.map(normH),idx={};
+  h.forEach((x,i)=>{const en=isEnH(x);
+    if(/contenuto|pacchetto|prodotti|include/.test(x)&&!/descrizione/.test(x)){if(kind==="pk"){if(en&&idx.pacchettoEn===undefined)idx.pacchettoEn=i;else if(!en&&idx.pacchetto===undefined)idx.pacchetto=i}return}
+    if(/descrizione|trattamento|lavoro|voce/.test(x)){if(en&&idx.descEn===undefined)idx.descEn=i;else if(!en&&idx.desc===undefined)idx.desc=i;return}
+    if(/prezzo|importo|costo/.test(x)&&idx.prezzo===undefined){idx.prezzo=i;return}
+    if(/sconto/.test(x)&&idx.sconto===undefined){idx.sconto=i;return}});
+  return idx}
+function csvToItems(text,kind){const rows=csvParse(text);if(!rows.length)throw new Error("Il file è vuoto.");
+  const idx=csvMap(rows[0],kind);
+  if(idx.desc===undefined||idx.prezzo===undefined)throw new Error("Intestazioni non riconosciute. La prima riga deve contenere: "+(kind==="pk"?CSV_PK:CSV_TR).join(" ; "));
+  const g=(r,k)=>idx[k]===undefined?"":String(r[idx[k]]??"").trim();
+  const g2=(r,k)=>idx[k]===undefined?"":String(r[idx[k]]??"").replace(/\r/g,"").split("\n").map(s=>s.trim()).filter(Boolean).join("\n");
+  let skipped=0;const items=[];
+  rows.slice(1).forEach(r=>{const d=g(r,"desc");if(!d){skipped++;return}
+    const it={desc:d,descEn:g(r,"descEn"),prezzo:numCsv(g(r,"prezzo")||"0"),sconto:numCsv(g(r,"sconto")||"0")};
+    if(kind==="pk"){it.pacchetto=g2(r,"pacchetto");it.pacchettoEn=g2(r,"pacchettoEn")}
+    items.push(it)});
+  return {items,skipped}}
+function exportCsv(kind){
+  const rows=kind==="pk"?[CSV_PK,...P.map(x=>[x.desc,x.descEn||"",x.pacchetto||"",x.pacchettoEn||"",numCsv(x.prezzo),numCsv(x.sconto)])]
+                        :[CSV_TR,...L.map(x=>[x.desc,x.descEn||"",numCsv(x.prezzo),numCsv(x.sconto)])];
+  saveFile((kind==="pk"?"Listino pacchetti VDS":"Listino trattamenti VDS")+".csv",csvBuild(rows),"text/csv;charset=utf-8")}
+let pendingImp=null,pkOpen=false;
+function applyImport(mode){if(!pendingImp)return;const {kind,items}=pendingImp;const list=kind==="pk"?P:L;
+  if(mode==="replace"){list.splice(0,list.length,...items)}
+  else{let upd=0,add=0;items.forEach(it=>{const ex=list.find(x=>keyOf(x.desc)===keyOf(it.desc));if(ex){Object.assign(ex,it);upd++}else{list.push(it);add++}});
+    toast(`${upd} voci aggiornate, ${add} aggiunte`)}
+  if(mode==="replace")toast(`Listino sostituito: ${items.length} voci`);
+  pendingImp=null;if(kind==="pk")pkOpen=true;else listOpen=true;persist();renderEditor()}
+function impBar(kind){if(!pendingImp||pendingImp.kind!==kind)return "";const {items,skipped,file}=pendingImp;
+  return `<div class="impbar"><b>${esc(file)}</b>: ${items.length} ${items.length===1?"voce":"voci"} pronte${skipped?` (${skipped} righe senza descrizione ignorate)`:""}.
+    <div class="addrow"><button class="btn small primary" data-act="impReplace" type="button">Sostituisci il listino</button>
+    <button class="btn small" data-act="impMerge" type="button">Aggiorna e aggiungi</button><button class="btn small ghost" data-act="impCancel" type="button">Annulla</button></div>
+    <p class="hint" style="margin:6px 0 0">«Aggiorna e aggiungi» aggiorna le voci con la stessa descrizione italiana e aggiunge le nuove.</p></div>`}
+function readCsvFile(file,kind){const fr=new FileReader();fr.onload=()=>{try{const r=csvToItems(fr.result,kind);
+    if(!r.items.length){toast("Nel file non ci sono voci con descrizione");return}
+    pendingImp={kind,items:r.items,skipped:r.skipped,file:file.name};if(kind==="pk")pkOpen=true;else listOpen=true;renderEditor()}
+  catch(e){toast(e.message||"File CSV non leggibile")}};fr.readAsText(file,"utf-8")}
+function packSection(){
+  return `<details class="sec" id="pkSec"${pkOpen?" open":""}><summary><h2>Listino pacchetti promozione<span class="sp"><span style="font-size:12px;color:var(--ui-muted);font-weight:500">${P.length} ${P.length===1?"pacchetto":"pacchetti"}</span></span></h2></summary><div class="secb">
+    <p class="hint" style="margin:0 0 8px">Nelle righe «Pacchetto promozione», scegliendo il nome dal listino si compilano prezzo, sconto e contenuto, in italiano e in inglese.</p>
+    ${impBar("pk")}
+    <div class="pklist">${P.length?P.map((x,i)=>`<div class="pkitem">
+      <div class="grid" style="grid-template-columns:1fr 1fr">
+        <label class="fld"><span>Descrizione del lavoro ITA</span><input class="inp" data-p="${i}" data-pf="desc" value="${esc(x.desc)}"></label>
+        <label class="fld"><span>Descrizione del lavoro ENG</span><input class="inp${String(x.descEn||"").trim()?"":" missing"}" data-p="${i}" data-pf="descEn" value="${esc(x.descEn||"")}"></label>
+        <label class="fld"><span>Contenuto del pacchetto · una voce per riga</span><textarea class="inp pack" data-p="${i}" data-pf="pacchetto" rows="${Math.max(3,String(x.pacchetto||"").split("\n").length+1)}">${esc(x.pacchetto||"")}</textarea></label>
+        <label class="fld"><span>Contenuto del pacchetto ENG</span><textarea class="inp pack${String(x.pacchetto||"").trim()&&!String(x.pacchettoEn||"").trim()?" missing":""}" data-p="${i}" data-pf="pacchettoEn" rows="${Math.max(3,String(x.pacchettoEn||"").split("\n").length+1)}">${esc(x.pacchettoEn||"")}</textarea></label>
+      </div>
+      <div class="pkfoot"><label class="fld"><span>Prezzo unitario €</span><input class="inp num" data-p="${i}" data-pf="prezzo" value="${esc(x.prezzo)}"></label>
+        <label class="fld"><span>Sconto unitario €</span><input class="inp num" data-p="${i}" data-pf="sconto" value="${esc(x.sconto)}"></label>
+        <button class="btn small ghost danger" data-act="pDel" data-p="${i}" type="button">Elimina pacchetto</button></div>
+    </div>`).join(""):`<p class="empty">Nessun pacchetto nel listino.</p>`}</div>
+    <div class="addrow" style="margin-top:8px"><button class="btn small" data-act="pAdd" type="button">+ Pacchetto</button>
+      <button class="btn small ghost" data-act="pImp" type="button">Importa CSV…</button><button class="btn small ghost" data-act="pExp" type="button">Esporta CSV</button>
+      <input type="file" id="fPkCsv" accept=".csv,text/csv,text/plain" hidden></div>
+  </div></details>`}
+
 let saveT=null;
-function persist(){clearTimeout(saveT);saveT=setTimeout(()=>{if(!lsSet(LS_Q,Q)){const c={...Q,opt:null,optOut:null,optCrop:null};lsSet(LS_Q,c)}lsSet(LS_L,L)},400)}
+function persist(){clearTimeout(saveT);saveT=setTimeout(()=>{if(!lsSet(LS_Q,Q)){const c={...Q,opt:null,optOut:null,optCrop:null};lsSet(LS_Q,c)}lsSet(LS_L,L);lsSet(LS_P,P)},400)}
 
 /* ---------- utilità ---------- */
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -470,6 +567,7 @@ function visitTitleDoc(v,i){if(!isEN())return visitTitle(v,i);const t=tx(),g=gio
 function prefixDoc(r,c){const p=prefix(r,c);if(!isEN())return p;return p==="SCONTO"?TX.en.pfDisc:p==="OMAGGIO"?TX.en.pfFree:p==="PROMOZIONE"?"PROMOTION":""}
 function listinoEn(desc){const k=String(desc||"").trim().toLowerCase();if(!k)return "";
   const m=L.find(x=>x.desc.trim().toLowerCase()===k&&String(x.descEn||"").trim());if(m)return m.descEn.trim();
+  const pk=P.find(x=>keyOf(x.desc)===k&&String(x.descEn||"").trim());if(pk)return pk.descEn.trim();
   const d=LISTINO_DEFAULT.find(x=>x.desc.trim().toLowerCase()===k);return d?d.descEn:""}
 function descEnOf(r){return String(r.descEn||"").trim()||listinoEn(r.desc)}
 function descDoc(r){if(!isEN())return r.desc;return descEnOf(r)||r.desc}
@@ -561,7 +659,7 @@ function rowEditor(r,vi){const c=calc(r);
     <label class="fld a-q"><span>Q.tà</span><input class="inp num" data-f="qta" inputmode="decimal" value="${esc(r.qta)}"></label>
     <label class="fld a-t"><span>Etichetta</span><select class="inp" data-f="tipo">
       ${[["auto","Auto"],["none","Nessuna"],["SCONTO","SCONTO"],["OMAGGIO","OMAGGIO"],["PROMO","PROMOZIONE"]].map(([v,l])=>`<option value="${v}"${r.tipo===v?" selected":""}>${l}</option>`).join("")}</select></label>
-    <label class="fld a-d"><span>Descrizione del lavoro</span><input class="inp" data-f="desc" list="dlListino" value="${esc(r.desc)}" placeholder="Scrivi o scegli dal listino"></label>
+    <label class="fld a-d"><span>Descrizione del lavoro</span><input class="inp" data-f="desc" list="${r.tipo==="PROMO"?"dlPack":"dlListino"}" value="${esc(r.desc)}" placeholder="${r.tipo==="PROMO"?"Scrivi o scegli dal listino pacchetti":"Scrivi o scegli dal listino"}"></label>
     <div class="a-x"><button class="btn icon ghost" data-act="up" title="Sposta su" type="button">↑</button><button class="btn icon ghost" data-act="down" title="Sposta giù" type="button">↓</button><button class="btn icon ghost danger" data-act="del" title="Elimina riga" type="button">✕</button></div>
     <label class="fld a-z"><span>Denti</span><input class="inp" data-f="denti" value="${esc(r.denti)}" placeholder="es. 16,14,24"></label>
     <div class="a-p"><label class="fld"><span>Prezzo unit. €</span><input class="inp num" data-f="prezzo" inputmode="decimal" value="${esc(r.prezzo)}"></label>
@@ -636,12 +734,16 @@ function renderEditor(){
 
   <details class="sec" id="lstSec"${listOpen?" open":""}><summary><h2>Listino prezzi<span class="sp"><span style="font-size:12px;color:var(--ui-muted);font-weight:500">${L.length} voci</span></span></h2></summary><div class="secb">
     <p class="hint" style="margin:0 0 8px">Quando scegli una descrizione dal listino, prezzo e sconto per unità vengono compilati da soli. La descrizione EN viene usata quando il documento è in inglese. Il listino resta salvato in questo browser.</p>
+    ${impBar("tr")}
     <div class="lstwrap"><table class="lst"><thead><tr><th>Descrizione</th><th>Descrizione EN</th><th>Prezzo unit. €</th><th>Sconto €/u</th><th></th></tr></thead><tbody>
       ${L.map((x,i)=>`<tr><td><input class="inp" data-l="${i}" data-lf="desc" value="${esc(x.desc)}"></td><td><input class="inp${String(x.descEn||"").trim()?"":" missing"}" data-l="${i}" data-lf="descEn" value="${esc(x.descEn||"")}" placeholder="English description"></td><td><input class="inp num" data-l="${i}" data-lf="prezzo" value="${esc(x.prezzo)}"></td><td><input class="inp num" data-l="${i}" data-lf="sconto" value="${esc(x.sconto)}"></td><td><button class="btn icon ghost danger" data-act="lDel" data-l="${i}" title="Elimina voce" type="button">✕</button></td></tr>`).join("")}
     </tbody></table></div>
-    <div class="addrow" style="margin-top:8px"><button class="btn small" data-act="lAdd" type="button">+ Voce di listino</button><button class="btn small ghost" data-act="lReset" type="button">${resetArm?"Conferma: ripristina listino":"Ripristina listino iniziale"}</button></div>
-  </div></details>`;
-  document.getElementById("dlListino").innerHTML=L.map(x=>`<option value="${esc(x.desc)}">`).join("");
+    <div class="addrow" style="margin-top:8px"><button class="btn small" data-act="lAdd" type="button">+ Voce di listino</button><button class="btn small ghost" data-act="lImp" type="button">Importa CSV…</button><button class="btn small ghost" data-act="lExp" type="button">Esporta CSV</button><button class="btn small ghost" data-act="lReset" type="button">${resetArm?"Conferma: ripristina listino":"Ripristina listino iniziale"}</button>
+      <input type="file" id="fLstCsv" accept=".csv,text/csv,text/plain" hidden></div>
+  </div></details>
+  ${packSection()}`;
+  fillDatalists();
+  requestAnimationFrame(()=>ED.querySelectorAll("textarea.pack").forEach(ta=>{if(ta.offsetParent){ta.style.height="auto";ta.style.height=(ta.scrollHeight+2)+"px"}}));
   updateSummary();
   if(Q.opt)ensureOptImg(drawCropView);
 }
@@ -663,8 +765,13 @@ const ED=document.getElementById("editor");
 ED.addEventListener("input",e=>{const t=e.target;
   if(t.dataset.q){Q[t.dataset.q]=t.type==="checkbox"?t.checked:t.value;persist();renderDoc();updateSummary();return}
   if(t.dataset.vf){Q.visite[+t.dataset.v][t.dataset.vf]=t.value;persist();renderDoc();return}
+  if(t.dataset.pf){const x=P[+t.dataset.p];x[t.dataset.pf]=t.value;persist();
+    if(t.dataset.pf==="desc")fillDatalists();
+    if(t.dataset.pf==="descEn"||t.dataset.pf==="pacchettoEn")t.classList.toggle("missing",!t.value.trim()&&(t.dataset.pf==="descEn"||String(x.pacchetto||"").trim()!==""));
+    if(t.classList.contains("pack")){t.style.height="auto";t.style.height=(t.scrollHeight+2)+"px"}
+    if(isEN())renderDoc();return}
   if(t.dataset.lf){L[+t.dataset.l][t.dataset.lf]=t.value;persist();if(t.dataset.lf==="descEn"){t.classList.toggle("missing",!t.value.trim());if(isEN())renderDoc()}
-    if(t.dataset.lf==="desc")document.getElementById("dlListino").innerHTML=L.map(x=>`<option value="${esc(x.desc)}">`).join("");return}
+    if(t.dataset.lf==="desc")fillDatalists();return}
   const rowEl=t.closest(".row");if(!rowEl||!t.dataset.f)return;const f=findRow(rowEl.dataset.id);if(!f)return;const r=f.r;
   if(t.dataset.f==="mode"&&t.value!==r.mode){const before=calc(r).disc,q=num(r.qta),gr=calc(r).gross;r.mode=t.value;
     if(before>0){let v=r.mode==="tot"?before:r.mode==="pct"?(gr?before/gr*100:0):(q?before/q:0);v=Math.round(v*100)/100;
@@ -676,7 +783,16 @@ ED.addEventListener("input",e=>{const t=e.target;
   if(t.dataset.f==="pacchettoEn")t.classList.toggle("missing",packMissingEn(r));
   if(t.classList.contains("pack")){t.style.height="auto";t.style.height=(t.scrollHeight+2)+"px"}
   if(t.dataset.f==="denti"){const n=teeth(t.value).length;if(n&&(!r.qLock||num(r.qta)===0||r._auto)){r.qta=String(n);r._auto=true;rowEl.querySelector('[data-f="qta"]').value=r.qta}}
-  if(t.dataset.f==="desc"){const m=L.find(x=>x.desc.trim().toLowerCase()===t.value.trim().toLowerCase());
+  if(t.dataset.f==="desc"){const pk=findPack(t.value);
+    if(pk&&(r.tipo==="PROMO"||!L.some(x=>keyOf(x.desc)===keyOf(t.value)))){const wasPromo=r.tipo==="PROMO";
+      Object.assign(r,{tipo:"PROMO",prezzo:pk.prezzo,sconto:pk.sconto,mode:"eur",descEn:"",pacchetto:pk.pacchetto||"",pacchettoEn:pk.pacchettoEn||""});
+      Q.esempio=false;persist();renderDoc();
+      if(!wasPromo||!rowEl.querySelector('[data-f="pacchetto"]')){renderEditor();return}
+      rowEl.querySelector('[data-f="prezzo"]').value=r.prezzo;rowEl.querySelector('[data-f="sconto"]').value=r.sconto;rowEl.querySelector('[data-f="mode"]').value="eur";
+      rowEl.querySelectorAll("textarea.pack").forEach(ta=>{ta.value=r[ta.dataset.f]||"";ta.style.height="auto";ta.style.height=(ta.scrollHeight+2)+"px";if(ta.dataset.f==="pacchettoEn")ta.classList.toggle("missing",packMissingEn(r))});
+      rowEl.querySelector("[data-net]").innerHTML=netCell(calc(r));return}
+  }
+  if(t.dataset.f==="desc"&&r.tipo!=="PROMO"){const m=L.find(x=>x.desc.trim().toLowerCase()===t.value.trim().toLowerCase());
     if(m){r.prezzo=m.prezzo;r.sconto=m.sconto;r.mode="eur";r.descEn="";rowEl.querySelector('[data-f="prezzo"]').value=r.prezzo;rowEl.querySelector('[data-f="sconto"]').value=r.sconto;rowEl.querySelector('[data-f="mode"]').value="eur"}}
   rowEl.querySelector("[data-net]").innerHTML=netCell(calc(r));
   if(isEN()&&(t.dataset.f==="desc"||t.dataset.f==="descEn")){const de=rowEl.querySelector('[data-f="descEn"]');if(de){const le=listinoEn(r.desc);
@@ -686,9 +802,10 @@ ED.addEventListener("input",e=>{const t=e.target;
 ED.addEventListener("change",e=>{const t=e.target;
   if(t.dataset.q==="detrazione"){Q.detrazione=t.checked;persist();renderDoc();return}
   if(t.id==="fOpt"&&t.files[0])loadOpt(t.files[0]);
+  if((t.id==="fLstCsv"||t.id==="fPkCsv")&&t.files[0]){readCsvFile(t.files[0],t.id==="fPkCsv"?"pk":"tr");t.value=""}
   if(t.dataset.f==="qta"){const f=findRow(t.closest(".row").dataset.id);if(f)f.r._auto=false}
 });
-ED.addEventListener("toggle",e=>{if(e.target.id==="lstSec")listOpen=e.target.open},true);
+ED.addEventListener("toggle",e=>{if(e.target.id==="lstSec")listOpen=e.target.open;if(e.target.id==="pkSec"){pkOpen=e.target.open;if(pkOpen)e.target.querySelectorAll("textarea.pack").forEach(ta=>{ta.style.height="auto";ta.style.height=(ta.scrollHeight+2)+"px"})}},true);
 ED.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b)return;const a=b.dataset.act;const vi=+b.dataset.v;
   if(a!=="lReset")resetArm=false;
   const rowEl=b.closest(".row");
@@ -710,6 +827,17 @@ ED.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b)ret
   if(a==="vdown"&&vi<Q.visite.length-1){[Q.visite[vi+1],Q.visite[vi]]=[Q.visite[vi],Q.visite[vi+1]];changed(true);return}
   if(a==="optDel"){Q.opt=null;Q.optOut=null;Q.optCrop=null;optImg=null;changed(true);return}
   if(a==="cropReset"){Q.optCrop={z:1,cx:.5,cy:.5};syncZoomUI();cropLive();cropCommit();return}
+  if(a==="lImp"){document.getElementById("fLstCsv").click();return}
+  if(a==="pImp"){document.getElementById("fPkCsv").click();return}
+  if(a==="lExp"){exportCsv("tr");return}
+  if(a==="pExp"){exportCsv("pk");return}
+  if(a==="impReplace"){applyImport("replace");return}
+  if(a==="impMerge"){applyImport("merge");return}
+  if(a==="impCancel"){pendingImp=null;renderEditor();return}
+  if(a==="pAdd"){P.push({desc:"",descEn:"",pacchetto:"",pacchettoEn:"",prezzo:"0",sconto:"0"});persist();pkOpen=true;renderEditor();
+    const ins=ED.querySelectorAll('[data-pf="desc"]');ins[ins.length-1]?.focus();return}
+  if(a==="pDel"){if(!b.dataset.armed){b.dataset.armed="1";b.textContent="Conferma eliminazione";setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent="Elimina pacchetto"}},3500);return}
+    P.splice(+b.dataset.p,1);persist();pkOpen=true;renderEditor();return}
   if(a==="lDel"){L.splice(+b.dataset.l,1);persist();renderEditor();return}
   if(a==="lAdd"){L.push({desc:"",descEn:"",prezzo:"0",sconto:"0"});persist();listOpen=true;renderEditor();
     const ins=ED.querySelectorAll('[data-lf="desc"]');ins[ins.length-1]?.focus();return}
@@ -920,11 +1048,11 @@ document.getElementById("pg2").addEventListener("click",()=>setPages(2));
 document.getElementById("lgEn").addEventListener("click",()=>setLang("en"));
 document.getElementById("bXls").addEventListener("click",exportXls);
 document.getElementById("bSave").addEventListener("click",()=>{
-  saveFile(fileName()+".json",JSON.stringify({tipo:"vds-preventivo",versione:1,preventivo:Q,listino:L},null,1),"application/json")});
+  saveFile(fileName()+".json",JSON.stringify({tipo:"vds-preventivo",versione:1,preventivo:Q,listino:L,pacchetti:P},null,1),"application/json")});
 document.getElementById("bOpen").addEventListener("click",()=>document.getElementById("fOpen").click());
 document.getElementById("fOpen").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const fr=new FileReader();
   fr.onload=()=>{try{const d=JSON.parse(fr.result);if(!d.preventivo||!Array.isArray(d.preventivo.visite))throw 0;Q=d.preventivo;
-    Q.visite.forEach(v=>v.righe.forEach(r=>{r.id=r.id||nid()}));optImg=null;if(Q.opt&&!Q.optOut)ensureOptImg(()=>{makeOptOut(true);renderDoc()});if(Array.isArray(d.listino)&&d.listino.length)L=fillListinoEn(d.listino);if(!Q.lang)Q.lang="it";syncLangUI();changed(true);toast("Preventivo aperto: "+fullName())}
+    Q.visite.forEach(v=>v.righe.forEach(r=>{r.id=r.id||nid()}));optImg=null;if(Q.opt&&!Q.optOut)ensureOptImg(()=>{makeOptOut(true);renderDoc()});if(Array.isArray(d.listino)&&d.listino.length)L=fillListinoEn(d.listino);if(Array.isArray(d.pacchetti)&&d.pacchetti.length)P=d.pacchetti;if(!Q.lang)Q.lang="it";syncLangUI();changed(true);toast("Preventivo aperto: "+fullName())}
     catch(err){toast("Il file non è una bozza valida di preventivo VDS")}};fr.readAsText(f);e.target.value=""});
 document.getElementById("bNew").addEventListener("click",e=>{const b=e.currentTarget;
   if(!newArm){newArm=true;b.textContent="Conferma: svuota";setTimeout(()=>{newArm=false;b.textContent="Nuovo preventivo"},3500);return}
@@ -959,8 +1087,9 @@ function refreshSt(){if(!user){setSt("","Non connesso");return}
 /* --- aggancio al salvataggio locale: segna le modifiche e sincronizza il listino --- */
 const persistLocal=persist;
 persist=function(){persistLocal();dirty=true;refreshSt();syncListino()};
-function syncListino(){if(!user)return;const s=JSON.stringify(L);if(s===lastListino)return;clearTimeout(listinoT);
-  listinoT=setTimeout(async()=>{const {error}=await sb.from("vds_listino").upsert({id:1,voci:L});if(error){setSt("err","Listino non salvato online");console.error(error)}else lastListino=s},900)}
+const listinoKey=()=>JSON.stringify({L,P});
+function syncListino(){if(!user)return;const s=listinoKey();if(s===lastListino)return;clearTimeout(listinoT);
+  listinoT=setTimeout(async()=>{const {error}=await sb.from("vds_listino").upsert({id:1,voci:L,pacchetti:P});if(error){setSt("err","Listino non salvato online");console.error(error)}else lastListino=s},900)}
 
 /* --- login --- */
 function showLogin(msg){if(document.getElementById("loginBox"))return;
@@ -985,10 +1114,15 @@ function hideLogin(){document.getElementById("loginBox")?.remove()}
 
 async function onSignedIn(u){user=u;hideLogin();
   /* verifica dei permessi e caricamento del listino condiviso */
-  const {data,error}=await sb.from("vds_listino").select("voci").eq("id",1).maybeSingle();
+  const {data,error}=await sb.from("vds_listino").select("voci,pacchetti").eq("id",1).maybeSingle();
   if(error){setSt("err","Accesso ai dati negato");toast("Questo account non può accedere ai preventivi dello studio.");return}
-  if(data&&Array.isArray(data.voci)&&data.voci.length){L=fillListinoEn(data.voci);lastListino=JSON.stringify(L);try{localStorage.setItem(LS_L,lastListino)}catch(e){}renderEditor()}
-  else{lastListino="";syncListino()}
+  let changedL=false;
+  if(data&&Array.isArray(data.voci)&&data.voci.length){L=fillListinoEn(data.voci);changedL=true}
+  if(data&&Array.isArray(data.pacchetti)&&data.pacchetti.length){P=data.pacchetti;changedL=true}
+  try{localStorage.setItem(LS_L,JSON.stringify(L));localStorage.setItem(LS_P,JSON.stringify(P))}catch(e){}
+  if(changedL)renderEditor();
+  const complete=data&&Array.isArray(data.voci)&&data.voci.length&&Array.isArray(data.pacchetti)&&data.pacchetti.length;
+  lastListino=complete?listinoKey():"";if(!complete)syncListino()
   dirty=false;refreshSt()}
 
 sb.auth.onAuthStateChange((ev,session)=>{
