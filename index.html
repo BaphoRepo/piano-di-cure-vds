@@ -113,6 +113,12 @@ button,input,select{font:inherit;color:inherit}
 .seg button{border:0;background:transparent;padding:6px 11px;font-weight:600;cursor:pointer;letter-spacing:.04em}
 .seg button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink)}
 .row .a-e{grid-column:1 / -1}
+.pztext{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;min-height:150px}
+.pzrep{margin-top:10px;border:1px solid var(--ui-line);border-radius:6px;padding:8px 10px;font-size:13px;display:grid;gap:8px;max-height:340px;overflow:auto}
+.pzrep ul{margin:4px 0 0;padding-left:18px;display:grid;gap:3px}
+.pzrep .src{color:var(--ui-muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.pzrep .meta{color:var(--ui-muted)}
+.pzrep li.bad{color:var(--danger)}.pzrep li.bad .src,.pzrep li.bad .meta{color:var(--danger)}
 .impbar{border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--ui-panel));border-radius:6px;padding:9px 11px;margin:0 0 10px;font-size:13px}
 .pklist{display:grid;gap:10px}
 .pkitem{border:1px solid var(--ui-line);border-radius:7px;padding:10px}
@@ -297,31 +303,65 @@ const MESI=["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Ag
 const LS_Q="vds.preventivo.v1", LS_L="vds.listino.v1";
 
 const LISTINO_DEFAULT=[
- ["Consulenza, prima visita e piano di cure",30,30,"Consultation, first visit and treatment plan"],
- ["TAC volumetrico Dentalscan in 3D cone beam",150,150,"3D cone beam CT scan (Dentalscan)"],
- ["Pacchetto chirurgia e anestesia",200,100,"Surgery and anaesthesia package"],
- ["Trattamento igienico professionale ad ultrasuoni MECTRON",100,25,"Professional ultrasonic hygiene treatment (MECTRON)"],
- ["Scansione intraorale e prova della protesi di riferimento",400,400,"Intraoral scan and reference prosthesis try-in"],
- ["Estrazione semplice",50,0,"Simple extraction"],
- ["Estrazione dente pluriradicolato",60,10,"Multi-rooted tooth extraction"],
- ["Otturazione semplice",85,10,"Simple filling"],
- ["Devitalizzazione monocanalare con ricostruzione",210,0,"Single-canal root canal treatment with reconstruction"],
- ["Rialzo mini del seno mascellare",600,50,"Mini sinus lift"],
- ["Rialzo MAXI del seno mascellare",800,50,"MAXI sinus lift"],
- ["Rigenerazione ossea GBR maxillo",500,50,"GBR bone regeneration (maxilla)"],
- ["Rigenerazione ossea GBR mandibolare",500,0,"GBR bone regeneration (mandible)"],
- ["Rimozione impianto",100,0,"Implant removal"],
- ["Impianto osteointegrato MEGAGEN AnyOne",289,0,"MEGAGEN AnyOne osseointegrated implant"],
- ["Impianto osteointegrato MEGAGEN AnyRidge",389,0,"MEGAGEN AnyRidge osseointegrated implant"],
- ["Trattamento Plasma X-Motion per impianto",20,10,"Plasma X-Motion treatment for implant"],
- ["Protesi provvisoria totale acrilica",340,340,"Full acrylic temporary denture"],
- ["Corona provvisoria in PMMA",60,0,"PMMA temporary crown"],
- ["Vite di guarigione",20,0,"Healing screw"],
- ["Moncone per impianto",100,40,"Implant abutment"],
- ["Moncone Multi-unit per impianto",140,40,"Multi-unit implant abutment"],
- ["Corona in zirconio CAD/CAM su impianto",400,80,"CAD/CAM zirconia crown on implant"],
- ["Corona in zirconio CAD/CAM su dente naturale",300,0,"CAD/CAM zirconia crown on natural tooth"],
- ["Protesi fissa ‘CORE FUSION 4’ titanio e zirconia da 12 corone",4400,500,"‘CORE FUSION 4’ fixed prosthesis in titanium and zirconia with 12 crowns"]
+ ["Consulenza, prima visita e piano di cure", 30, 30, "Consultation, first visit and treatment plan"],
+ ["TAC volumetrico Dentalscan in 3D cone beam", 150, 150, "3D cone beam CT scan (Dentalscan)"],
+ ["Pacchetto chirurgia e anestesia", 200, 100, "Surgery and anaesthesia package"],
+ ["Trattamento igienico professionale ad ultrasuoni MECTRON", 100, 25, "Professional ultrasonic hygiene treatment (MECTRON)"],
+ ["Scansione intraorale e prova della protesi di riferimento", 400, 400, "Intraoral scan and reference prosthesis try-in"],
+ ["Trattamento di sbiancamento professionale [per seduta]", 150, 25, "Professional teeth whitening treatment [per session]"],
+ ["Manutenzione delle componenti protesiche", 50, 0, "Maintenance of prosthetic components"],
+ ["Bite PROSAFE - paradenti notturno per la protezione di protesi/arcata", 100, 0, "PROSAFE bite - night guard to protect the prosthesis/arch"],
+ ["Decontaminazione laser delle superfici implantari", 100, 20, "Laser decontamination of implant surfaces"],
+ ["Concentrato piastrinico fattore di crescita PRGF", 160, 60, "PRGF platelet-rich growth factor concentrate"],
+ ["Terapia parodontale con levigature [entrambe arcate]", 500, 0, "Periodontal therapy with root planing [both arches]"],
+ ["Corona provvisoria in PMMA", 60, 0, "PMMA temporary crown"],
+ ["Corona provvisoria a carico immediato Xpress Smile + moncone", 200, 0, "Xpress Smile immediate-loading temporary crown + abutment"],
+ ["Corona provvisoria in PMMA su dente naturale", 50, 0, "PMMA temporary crown on natural tooth"],
+ ["Corona in PFM metallo/ceramica su impianto", 300, 40, "PFM metal-ceramic crown on implant"],
+ ["Corona in PFM metallo/ceramica su dente naturale", 280, 40, "PFM metal-ceramic crown on natural tooth"],
+ ["Corona in zirconio CAD/CAM su impianto", 400, 80, "CAD/CAM zirconia crown on implant"],
+ ["Corona in zirconio CAD/CAM su dente naturale", 300, 0, "CAD/CAM zirconia crown on natural tooth"],
+ ["Protesi provvisoria totale acrilica", 340, 340, "Full acrylic temporary denture"],
+ ["Ricostruzione coronale", 80, 0, "Coronal reconstruction (core build-up)"],
+ ["Ricostruzione con perno in fibra", 220, 80, "Fibre post reconstruction"],
+ ["Ricostruzione con perno in metallo", 160, 0, "Metal post reconstruction"],
+ ["Ricostruzione con perno in argento", 175, 0, "Silver post reconstruction"],
+ ["Otturazione semplice", 85, 10, "Simple filling"],
+ ["Otturazione laser", 100, 0, "Laser filling"],
+ ["Otturazione MOD profonda/complessa", 110, 10, "Deep/complex MOD filling"],
+ ["Impianto osteointegrato MEGAGEN AnyOne", 289, 0, "MEGAGEN AnyOne osseointegrated implant"],
+ ["Impianto osteointegrato MEGAGEN AnyRidge", 389, 0, "MEGAGEN AnyRidge osseointegrated implant"],
+ ["Moncone per impianto", 100, 40, "Implant abutment"],
+ ["Vite di guarigione", 20, 0, "Healing screw"],
+ ["Trattamento Plasma X-Motion per impianto", 20, 10, "Plasma X-Motion treatment for implant"],
+ ["Moncone personalizzato per impianto presente", 200, 100, "Custom abutment for existing implant"],
+ ["Moncone Multi-unit per impianto", 140, 40, "Multi-unit implant abutment"],
+ ["Protesi parziale mobile Kermeny", 100, 0, "Kemeny removable partial denture"],
+ ["Protesi fissa TITANIO & ZIRCONIA - Hybrid fix su 4 impianti", 4000, 0, "TITANIUM & ZIRCONIA fixed prosthesis - Hybrid fix on 4 implants"],
+ ["Protesi fissa ‘CORE FUSION 4’ titanio e zirconia da 12 corone", 4400, 500, "‘CORE FUSION 4’ fixed prosthesis in titanium and zirconia with 12 crowns"],
+ ["Protesi fissa ‘CORE FUSION 6’ titanio e zirconia da 12 corone", 4800, 700, "‘CORE FUSION 6’ fixed prosthesis in titanium and zirconia with 12 crowns"],
+ ["Faccetta in composito con tecnica diretta", 130, 0, "Direct composite veneer"],
+ ["Rigenerazione ossea GBR maxillo [superiore]", 500, 0, "GBR bone regeneration, maxilla [upper]"],
+ ["Rigenerazione ossea GBR mandibolare [inferiore]", 500, 0, "GBR bone regeneration, mandible [lower]"],
+ ["Rigenerazione ossea GBR complessa con viti e membrana", 1600, 100, "Complex GBR bone regeneration with screws and membrane"],
+ ["Rialzo mini del seno mascellare", 600, 50, "Mini sinus lift"],
+ ["Rialzo MAXI del seno mascellare", 800, 50, "MAXI sinus lift"],
+ ["Trattamento endodontico al microscopio e ricostruzione 1 canale", 200, 20, "Microscope-assisted root canal treatment and reconstruction, 1 canal"],
+ ["Trattamento endodontico al microscopio e ricostruzione 2 canali", 240, 20, "Microscope-assisted root canal treatment and reconstruction, 2 canals"],
+ ["Trattamento endodontico al microscopio e ricostruzione 3 canali", 280, 20, "Microscope-assisted root canal treatment and reconstruction, 3 canals"],
+ ["Ritrattamento endo al microscopio + ricostruzione un canale", 200, 20, "Microscope-assisted root canal retreatment + reconstruction, one canal"],
+ ["Ritrattamento endo al microscopio + ricostruzione due canali", 240, 20, "Microscope-assisted root canal retreatment + reconstruction, two canals"],
+ ["Ritrattamento endo al microscopio + ricostruzione tre canali", 280, 20, "Microscope-assisted root canal retreatment + reconstruction, three canals"],
+ ["Perno in fibra di vetro/carbonio", 100, 40, "Glass/carbon fibre post"],
+ ["Trattamento con idrossido di calcio", 50, 30, "Calcium hydroxide treatment"],
+ ["Sterilizzazione dei canali radicolari al laser", 36, 16, "Laser sterilisation of root canals"],
+ ["Terapia di ringiovanimento gengivale BRIGHT TONIX entrambe arcate", 100, 0, "BRIGHT TONIX gum rejuvenation therapy, both arches"],
+ ["Bonifica dentaria", 400, 0, "Dental clean-up (removal of infection foci)"],
+ ["Estrazione semplice", 50, 0, "Simple extraction"],
+ ["Estrazione dente giudizio", 100, 0, "Wisdom tooth extraction"],
+ ["Estrazione dente giudizio incluso", 150, 0, "Impacted wisdom tooth extraction"],
+ ["Rimozione/ablazione corona", 30, 0, "Crown removal"],
+ ["Rimozione impianto", 100, 0, "Implant removal"]
 ].map(([desc,prezzo,sconto,descEn])=>({desc,prezzo:String(prezzo),sconto:String(sconto),descEn}));
 
 let seq=1; const nid=()=>"r"+Date.now().toString(36)+(seq++);
@@ -415,7 +455,7 @@ function exportCsv(kind){
   const rows=kind==="pk"?[CSV_PK,...P.map(x=>[x.desc,x.descEn||"",x.pacchetto||"",x.pacchettoEn||"",numCsv(x.prezzo),numCsv(x.sconto)])]
                         :[CSV_TR,...L.map(x=>[x.desc,x.descEn||"",numCsv(x.prezzo),numCsv(x.sconto)])];
   saveFile((kind==="pk"?"Listino pacchetti VDS":"Listino trattamenti VDS")+".csv",csvBuild(rows),"text/csv;charset=utf-8")}
-let pendingImp=null,pkOpen=false;
+let pendingImp=null,pkOpen=false,pzOpen=true;
 function applyImport(mode){if(!pendingImp)return;const {kind,items}=pendingImp;const list=kind==="pk"?P:L;
   if(mode==="replace"){list.splice(0,list.length,...items)}
   else{let upd=0,add=0;items.forEach(it=>{const ex=list.find(x=>keyOf(x.desc)===keyOf(it.desc));if(ex){Object.assign(ex,it);upd++}else{list.push(it);add++}});
@@ -431,6 +471,91 @@ function readCsvFile(file,kind){const fr=new FileReader();fr.onload=()=>{try{con
     if(!r.items.length){toast("Nel file non ci sono voci con descrizione");return}
     pendingImp={kind,items:r.items,skipped:r.skipped,file:file.name};if(kind==="pk")pkOpen=true;else listOpen=true;renderEditor()}
   catch(e){toast(e.message||"File CSV non leggibile")}};fr.readAsText(file,"utf-8")}
+/* ---------- compilazione da testo libero ---------- */
+const PZ_STOP=new Set(["in","su","per","di","del","della","dei","delle","e","con","a","da","al","alla","il","la","lo","le","gli","i","un","una","x","n","nr"]);
+/* abbreviazioni e sinonimi usati negli appunti */
+const PZ_SYN=[[/\bmua\b/g,"moncone multi unit"],[/\bmulti\s*-?\s*unit\b/g,"multi unit"],[/\bzirc\w*/g,"zirconio"],[/\bzr\b/g,"zirconio"],
+  [/\bimp\b/g,"impianto"],[/\bimpianti\b/g,"impianto"],[/\bcorone\b/g,"corona"],[/\bmonconi\b/g,"moncone"],[/\bviti\b/g,"vite"],
+  [/\bestrazioni\b/g,"estrazione"],[/\botturazioni\b/g,"otturazione"],[/\bplasma\s*x\b/g,"plasma x motion"],[/\bpfm\b/g,"pfm metallo ceramica"],
+  [/\bprovv\w*/g,"provvisoria"],[/\bdevit\w*/g,"endodontico"],[/\bendo\b/g,"endodontico"],[/\bgbr\b/g,"gbr rigenerazione"],
+  [/\bgiudizio\b/g,"giudizio dente"],[/\bperno\b/g,"perno"],[/\bpmma\b/g,"pmma"]];
+const pzNorm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[’‘'`]/g," ").replace(/[^a-z0-9]+/g," ").trim();
+function pzTokens(s,syn){let t=pzNorm(s);if(syn)PZ_SYN.forEach(([a,b])=>{t=t.replace(a,b)});return t.split(" ").filter(w=>w&&!PZ_STOP.has(w)&&!/^\d+$/.test(w))}
+const pzTooth=n=>{n=+n;const q=Math.floor(n/10),u=n%10;return q>=1&&q<=4&&u>=1&&u<=8};
+/* denti in un intervallo FDI: 13-23 → 13…11 + 21…23 = 6 */
+const pzRangeCount=r=>{const [a,b]=r.split("-").map(Number);const qa=Math.floor(a/10),qb=Math.floor(b/10),ua=a%10,ub=b%10;
+  if(qa===qb)return Math.abs(ua-ub)+1;if((qa===1&&qb===2)||(qa===2&&qb===1)||(qa===3&&qb===4)||(qa===4&&qb===3))return ua+ub;return 0};
+const pzArch=n=>{const q=Math.floor(+n/10);return q===1||q===2?"sup":"inf"};
+/* parola dell'appunto ~ parola del listino (prefisso di almeno 3 lettere, es. «zirc» → «zirconio») */
+const pzSim=(a,b)=>a===b||(a.length>=3&&b.startsWith(a))||(b.length>=4&&a.startsWith(b));
+function pzMatch(text,lists){const q=pzTokens(text,true);if(!q.length)return null;let best=null;
+  lists.forEach(({kind,items})=>items.forEach(it=>{const w=pzTokens(it.desc,false);if(!w.length)return;
+    let hit=0;const used=new Set();
+    q.forEach(t=>{const j=w.findIndex((x,k)=>!used.has(k)&&pzSim(t,x));if(j>=0){used.add(j);hit++}});
+    if(!hit)return;
+    const score=hit/q.length-0.06*(w.length-used.size)+(kind==="pk"?0.01:0);
+    if(!best||score>best.score)best={score,hit,it,kind,q:q.length}}));
+  return best&&best.hit/best.q>=0.5?best:null}
+/* «viaggio 2 - dopo 3-4 mesi - 3 giorni» */
+function pzVisitHeader(line){const s=pzNorm(line);
+  if(!/^(viaggio|visita|trip|v)\s*\d+\b/.test(s)&&!/^(primo|prima|secondo|seconda|terzo|terza|quarto|quarta)\s+(viaggio|visita)\b/.test(s))return null;
+  const raw=String(line).replace(/^\s*(?:viaggio|visita|trip|v)\s*\d+\s*/i,"").replace(/^\s*(?:primo|prima|secondo|seconda|terzo|terza|quarto|quarta)\s+(?:viaggio|visita)\s*/i,"");
+  const g=/(\d+\s*(?:-|–|a)\s*\d+|\d+)\s*(?:gg|giorni|giorno|gg\.)\b/i.exec(raw);
+  const a=/(?:dopo|attesa|tra|fra)\s+(?:circa\s+)?(\d+\s*(?:-|–)\s*\d+|\d+)\s*(mesi|mese|settimane|settimana|giorni|giorno|anni|anno)\b/i.exec(raw);
+  return {giorni:g?g[1].replace(/\s*(?:–|a)\s*/,"-").replace(/\s+/g,""):"",attesa:a?(a[1].replace(/\s+/g,"").replace("–","-")+" "+a[2]).toUpperCase():""}}
+function parsePlan(text,lists){
+  const visits=[],report=[];let cur=null;
+  const newVisit=h=>{cur={attesa:h?h.attesa:"",giorni:h?h.giorni:"",righe:[]};visits.push(cur)};
+  String(text||"").split(/\r?\n/).forEach((line,ln)=>{
+    const clean=line.replace(/^[\s\-–•*·>]+/,"").replace(/["“”]/g,"").trim();if(!clean)return;
+    const h=pzVisitHeader(clean);if(h){newVisit(h);return}
+    if(!cur)newVisit(null);
+    /* quantità iniziale («6 corone …») e denti (numerazione FDI 11-48; anche intervalli «13-23») */
+    let body=clean,qty=null;const mq=/^(\d+)\s*(?:x\s+)?(?=[a-zà-ú])/i.exec(body);
+    if(mq&&!(pzTooth(mq[1])&&/^\d+\s*[,;]/.test(body))){qty=+mq[1];body=body.slice(mq[0].length)}
+    const teeth=[];const ranges=[];
+    body=body.replace(/\b([1-4][1-8])\s*[-–]\s*([1-4][1-8])\b/g,(m,a,b)=>{ranges.push(a+"-"+b);return " "});
+    body=body.replace(/\b(\d{2})\b/g,(m,n)=>{if(pzTooth(n)){teeth.push(n);return " "}return m});
+    const desc=body.replace(/[,;:()\[\]]+/g," ").replace(/\s+/g," ").trim();
+    const m=pzMatch(desc,lists);
+    const base={src:clean,line:ln+1,desc,match:m};
+    /* righe con denti di entrambe le arcate → una riga per arcata */
+    const groups={};teeth.forEach(t=>{(groups[pzArch(t)]=groups[pzArch(t)]||[]).push(t)});
+    ranges.forEach(r=>{const a=pzArch(r.slice(0,2));(groups[a]=groups[a]||[]).push(r)});
+    const arches=Object.keys(groups);
+    if(!arches.length)cur.righe.push({...base,g:null,teeth:[],qty:qty});
+    else arches.forEach(a=>{const tt=groups[a];const n=tt.reduce((s,x)=>s+(x.includes("-")?pzRangeCount(x):1),0);
+      cur.righe.push({...base,g:a,teeth:tt,qty:arches.length>1?(n||null):(qty??(n||null))})});
+  });
+  /* righe senza denti legate agli impianti (es. «plasma x»): stessi denti e arcata degli impianti del viaggio */
+  visits.forEach(v=>{const imp=v.righe.filter(r=>r.match&&/impianto osteointegrato/i.test(r.match.it.desc));
+    v.righe=v.righe.flatMap(r=>{if(r.g||!r.match||!/per impianto/i.test(r.match.it.desc)||!imp.length)return [r];
+      return imp.map(i=>({...r,g:i.g,teeth:i.teeth,qty:r.qty??i.qty,linked:true}))})});
+  return {visits}}
+
+let pzReport=null,pzUndo=null;
+const ARCH_IT={sup:"arcata superiore",inf:"arcata inferiore",gen:"trattamenti generali"};
+function runParse(){const txt=String(Q.testo||"").trim();if(!txt){toast("Scrivi o incolla prima il testo da analizzare");return}
+  const res=parsePlan(txt,[{kind:"tr",items:L},{kind:"pk",items:P}]);
+  if(!res.visits.length||!res.visits.some(v=>v.righe.length)){toast("Nel testo non ho trovato trattamenti da inserire");return}
+  pzUndo=JSON.stringify(Q.visite);
+  const std=Q.pzStd!==false;const rep=[];
+  Q.visite=res.visits.map((v,vi)=>{const righe=[];const rv={n:vi+1,attesa:v.attesa,giorni:v.giorni,rows:[]};
+    v.righe.forEach(x=>{const g=x.g||"gen",m=x.match,q=x.qty||1,den=x.teeth.join(",");let r;
+      if(m&&m.kind==="pk"){r=R(g,q,m.it.desc,m.it.prezzo,m.it.sconto,den);Object.assign(r,{tipo:"PROMO",pacchetto:m.it.pacchetto||"",pacchettoEn:m.it.pacchettoEn||""})}
+      else if(m)r=R(g,q,m.it.desc,m.it.prezzo,m.it.sconto,den);
+      else{const d=x.desc?x.desc.charAt(0).toUpperCase()+x.desc.slice(1):x.src;r=R(g,q,d,0,0,den)}
+      righe.push(r);rv.rows.push({src:x.src,ok:!!m,desc:r.desc,g,q,den,prezzo:num(r.prezzo),linked:!!x.linked})});
+    if(vi===0&&std){const have=new Set(righe.map(r=>keyOf(r.desc)));const add=stdFirst().filter(r=>!have.has(keyOf(r.desc)));righe.unshift(...add);rv.std=add.length}
+    rep.push(rv);return {attesa:v.attesa,giorni:v.giorni||(vi===0?"5":"3"),righe}});
+  pzReport=rep;Q.esempio=false;persist();renderEditor();renderDoc();
+  const bad=rep.reduce((s,v)=>s+v.rows.filter(r=>!r.ok).length,0);
+  toast(bad?`Compilato: ${bad} ${bad===1?"riga non trovata":"righe non trovate"} nel listino, controlla in rosso`:"Viaggi e terapie compilati dal testo")}
+function pzReportHTML(){if(!pzReport)return "";
+  return `<div class="pzrep">${pzReport.map(v=>`<div class="pzv"><b>${ORD[v.n-1]||v.n} VISITA</b>${v.attesa?` · attesa ${esc(v.attesa)}`:""}${v.giorni?` · ${esc(v.giorni)} giorni`:""}${v.std?` · +${v.std} voci standard`:""}
+    <ul>${v.rows.map(r=>`<li class="${r.ok?"":"bad"}"><span class="src">${esc(r.src)}</span> → ${r.ok?`<b>${esc(r.desc)}</b>`:`<b>non trovato nel listino</b>: inserito «${esc(r.desc)}» a 0 €`}
+      <span class="meta">· ${ARCH_IT[r.g]} · ${r.q} × ${eur(r.prezzo)}${r.den?` · denti ${esc(r.den)}`:""}${r.linked?" · denti presi dagli impianti":""}</span></li>`).join("")}</ul></div>`).join("")}</div>`}
+
 function packSection(){
   return `<details class="sec" id="pkSec"${pkOpen?" open":""}><summary><h2>Listino pacchetti promozione<span class="sp"><span style="font-size:12px;color:var(--ui-muted);font-weight:500">${P.length} ${P.length===1?"pacchetto":"pacchetti"}</span></span></h2></summary><div class="secb">
     <p class="hint" style="margin:0 0 8px">Nelle righe «Pacchetto promozione», scegliendo il nome dal listino si compilano prezzo, sconto e contenuto, in italiano e in inglese.</p>
@@ -687,6 +812,16 @@ function renderEditor(){
     <p class="hint">Nome del file PDF: <code id="fnHint">${esc(fileName())}.pdf</code></p>
   </div></div>
 
+  <details class="sec" id="pzSec"${pzOpen?" open":""}><summary><h2>Compila da testo<span class="sp"><span style="font-size:12px;color:var(--ui-muted);font-weight:500">appunti → viaggi e terapie</span></span></h2></summary><div class="secb">
+    <label class="fld"><span>Testo da analizzare</span><textarea class="inp pack pztext" id="q_testo" data-q="testo" rows="9" spellcheck="false" placeholder="viaggio 1 - 5 giorni&#10;- estrazione 22&#10;- impianto Anyone 44&#10;- plasma x&#10;- 6 corone in zirc su impianto 13 12 11 21 22 23&#10;&#10;viaggio 2 - dopo 3-4 mesi - 3 giorni&#10;- vite di guarigione 44">${esc(Q.testo||"")}</textarea></label>
+    <p class="hint">Una riga per viaggio («viaggio 2 - dopo 3-4 mesi - 3 giorni») e una riga per trattamento, con i denti in numerazione FDI: 18-28 arcata superiore, 38-48 arcata inferiore; anche intervalli come 13-23. Un numero all'inizio della riga è la quantità, altrimenti conta il numero di denti. Prezzi e sconti arrivano dal listino.</p>
+    <label class="chk"><input type="checkbox" id="q_pzStd" data-q="pzStd" ${Q.pzStd!==false?"checked":""}> Aggiungi al primo viaggio consulenza, TAC, pacchetto chirurgia e igiene</label>
+    <div class="addrow" style="margin-top:10px"><button class="btn primary small" data-act="pzRun" type="button">Compila viaggi e terapie</button>
+      ${pzUndo?`<button class="btn small ghost" data-act="pzUndo" type="button">Annulla la compilazione</button>`:""}</div>
+    ${pzReportHTML()}
+    <p class="hint">«Compila» sostituisce i viaggi attuali. Puoi tornare indietro con «Annulla la compilazione».</p>
+  </div></details>
+
   <div class="sec"><h2>Viaggi e terapie<span class="sp"><button class="btn small" data-act="addVisit" type="button">+ Aggiungi viaggio</button></span></h2><div class="secb">
     <div class="warnbox" id="enWarn" hidden></div>
     ${Q.visite.map((v,vi)=>`<div class="visit">
@@ -763,6 +898,7 @@ function changed(structural){Q.esempio=false;persist();if(structural)renderEdito
 
 const ED=document.getElementById("editor");
 ED.addEventListener("input",e=>{const t=e.target;
+  if(t.dataset.q==="testo"||t.dataset.q==="pzStd"){Q[t.dataset.q]=t.type==="checkbox"?t.checked:t.value;persist();if(t.classList.contains("pack")){t.style.height="auto";t.style.height=(t.scrollHeight+2)+"px"}return}
   if(t.dataset.q){Q[t.dataset.q]=t.type==="checkbox"?t.checked:t.value;persist();renderDoc();updateSummary();return}
   if(t.dataset.vf){Q.visite[+t.dataset.v][t.dataset.vf]=t.value;persist();renderDoc();return}
   if(t.dataset.pf){const x=P[+t.dataset.p];x[t.dataset.pf]=t.value;persist();
@@ -805,7 +941,7 @@ ED.addEventListener("change",e=>{const t=e.target;
   if((t.id==="fLstCsv"||t.id==="fPkCsv")&&t.files[0]){readCsvFile(t.files[0],t.id==="fPkCsv"?"pk":"tr");t.value=""}
   if(t.dataset.f==="qta"){const f=findRow(t.closest(".row").dataset.id);if(f)f.r._auto=false}
 });
-ED.addEventListener("toggle",e=>{if(e.target.id==="lstSec")listOpen=e.target.open;if(e.target.id==="pkSec"){pkOpen=e.target.open;if(pkOpen)e.target.querySelectorAll("textarea.pack").forEach(ta=>{ta.style.height="auto";ta.style.height=(ta.scrollHeight+2)+"px"})}},true);
+ED.addEventListener("toggle",e=>{if(e.target.id==="lstSec")listOpen=e.target.open;if(e.target.id==="pzSec")pzOpen=e.target.open;if(e.target.id==="pkSec"){pkOpen=e.target.open;if(pkOpen)e.target.querySelectorAll("textarea.pack").forEach(ta=>{ta.style.height="auto";ta.style.height=(ta.scrollHeight+2)+"px"})}},true);
 ED.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b)return;const a=b.dataset.act;const vi=+b.dataset.v;
   if(a!=="lReset")resetArm=false;
   const rowEl=b.closest(".row");
@@ -827,6 +963,8 @@ ED.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b)ret
   if(a==="vdown"&&vi<Q.visite.length-1){[Q.visite[vi+1],Q.visite[vi]]=[Q.visite[vi],Q.visite[vi+1]];changed(true);return}
   if(a==="optDel"){Q.opt=null;Q.optOut=null;Q.optCrop=null;optImg=null;changed(true);return}
   if(a==="cropReset"){Q.optCrop={z:1,cx:.5,cy:.5};syncZoomUI();cropLive();cropCommit();return}
+  if(a==="pzRun"){runParse();return}
+  if(a==="pzUndo"){if(pzUndo){Q.visite=JSON.parse(pzUndo);pzUndo=null;pzReport=null;persist();renderEditor();renderDoc();toast("Compilazione annullata: viaggi ripristinati")}return}
   if(a==="lImp"){document.getElementById("fLstCsv").click();return}
   if(a==="pImp"){document.getElementById("fPkCsv").click();return}
   if(a==="lExp"){exportCsv("tr");return}
