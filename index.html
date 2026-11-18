@@ -9,7 +9,7 @@
 :root{
   --ui-bg:#e9edf1; --ui-panel:#ffffff; --ui-ink:#1c2936; --ui-muted:#677686; --ui-line:#d5dce3;
   --ui-field:#f6f8fa; --ui-desk:#cfd7df; --brand:#3a5d7f; --brand-ink:#ffffff; --accent:#f2903f; --accent-ink:#1c2936;
-  --danger:#b4462f; --ok:#2f7d55; --g-gen:#4f6275; --g-sup:#2a6aa6; --g-inf:#b0561c;
+  --danger:#b4462f; --ok:#2f7d55; --g-gen:#4f6275; --vh-bg:#a7b5c2; --vh-ink:#0f1720; --g-sup:#2a6aa6; --g-inf:#b0561c;
   --f-ui:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-cond:"Barlow Semi Condensed","Avenir Next Condensed","Arial Narrow",sans-serif;
   /* Documento: sempre su carta bianca, colori del marchio VDS */
@@ -76,6 +76,14 @@ button,input,select{font:inherit;color:inherit}
 .vhead{display:flex;flex-wrap:wrap;align-items:end;gap:8px 12px;padding:10px 12px;background:color-mix(in srgb,var(--accent) 12%,var(--ui-panel))}
 .vtitle{font-family:var(--f-cond);font-weight:700;font-size:16px;color:var(--ui-ink);letter-spacing:.03em;align-self:center;min-width:120px}
 .vhead .fld{width:140px}
+.vhead{background:var(--vh-bg);color:var(--vh-ink);border-bottom:1px solid color-mix(in srgb,var(--vh-ink) 25%,transparent)}
+.vhead .vtitle{color:var(--vh-ink);font-weight:800}
+.vhead .fld span{color:var(--vh-ink);opacity:.85}
+.vhead .inp{background:color-mix(in srgb,#fff 55%,var(--vh-bg));color:var(--vh-ink);border-color:color-mix(in srgb,var(--vh-ink) 35%,transparent)}
+.vhead .inp::placeholder{color:color-mix(in srgb,var(--vh-ink) 50%,transparent)}
+.vhead .btn{color:var(--vh-ink);border-color:color-mix(in srgb,var(--vh-ink) 35%,transparent);background:transparent}
+.vhead .btn:hover{background:color-mix(in srgb,var(--vh-ink) 12%,transparent)}
+.vhead .btn.danger{color:#8a2412;border-color:color-mix(in srgb,#8a2412 45%,transparent)}
 .vhead .vact{margin-left:auto;display:flex;gap:4px;align-self:center}
 .grp{padding:0 12px 12px;border-top:1px solid var(--ui-line);border-left:4px solid var(--gc);background:color-mix(in srgb,var(--gc) 4%,var(--ui-panel))}
 .grp+.grp{margin-top:10px}
