@@ -9,7 +9,7 @@
 :root{
   --ui-bg:#e9edf1; --ui-panel:#ffffff; --ui-ink:#1c2936; --ui-muted:#677686; --ui-line:#d5dce3;
   --ui-field:#f6f8fa; --ui-desk:#cfd7df; --brand:#3a5d7f; --brand-ink:#ffffff; --accent:#f2903f; --accent-ink:#1c2936;
-  --danger:#b4462f; --ok:#2f7d55;
+  --danger:#b4462f; --ok:#2f7d55; --g-gen:#4f6275; --g-sup:#2a6aa6; --g-inf:#b0561c;
   --f-ui:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-cond:"Barlow Semi Condensed","Avenir Next Condensed","Arial Narrow",sans-serif;
   /* Documento: sempre su carta bianca, colori del marchio VDS */
@@ -19,11 +19,11 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --ui-bg:#111920; --ui-panel:#18232e; --ui-ink:#e4ebf2; --ui-muted:#93a3b3; --ui-line:#2b3a49;
   --ui-field:#111b25; --ui-desk:#0b1117; --brand:#7fa6cc; --brand-ink:#0d1620; --accent:#f2a05a; --accent-ink:#141c24;
-  --danger:#e07a63; --ok:#5fbf8c; color-scheme:dark}}
+  --danger:#e07a63; --ok:#5fbf8c; --g-gen:#a7b5c2; --g-sup:#7fb4e8; --g-inf:#f0a35e; color-scheme:dark}}
 :root[data-theme="dark"]{
   --ui-bg:#111920; --ui-panel:#18232e; --ui-ink:#e4ebf2; --ui-muted:#93a3b3; --ui-line:#2b3a49;
   --ui-field:#111b25; --ui-desk:#0b1117; --brand:#7fa6cc; --brand-ink:#0d1620; --accent:#f2a05a; --accent-ink:#141c24;
-  --danger:#e07a63; --ok:#5fbf8c; color-scheme:dark}
+  --danger:#e07a63; --ok:#5fbf8c; --g-gen:#a7b5c2; --g-sup:#7fb4e8; --g-inf:#f0a35e; color-scheme:dark}
 
 html,body{height:100%}
 body{background:var(--ui-bg);color:var(--ui-ink);font-family:var(--f-ui);font-size:14px;margin:0}
@@ -77,8 +77,12 @@ button,input,select{font:inherit;color:inherit}
 .vtitle{font-family:var(--f-cond);font-weight:700;font-size:16px;color:var(--ui-ink);letter-spacing:.03em;align-self:center;min-width:120px}
 .vhead .fld{width:140px}
 .vhead .vact{margin-left:auto;display:flex;gap:4px;align-self:center}
-.grp{padding:8px 12px 10px;border-top:1px solid var(--ui-line)}
-.grp h3{margin:2px 0 6px;font-family:var(--f-cond);font-style:italic;font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brand);display:flex;align-items:center;gap:8px}
+.grp{padding:0 12px 12px;border-top:1px solid var(--ui-line);border-left:4px solid var(--gc);background:color-mix(in srgb,var(--gc) 4%,var(--ui-panel))}
+.grp+.grp{margin-top:10px}
+.grp-gen{--gc:var(--g-gen)}.grp-sup{--gc:var(--g-sup)}.grp-inf{--gc:var(--g-inf)}
+.grp h3{margin:0 -12px 8px;padding:9px 12px;background:color-mix(in srgb,var(--gc) 15%,var(--ui-panel));border-bottom:1px solid color-mix(in srgb,var(--gc) 40%,transparent);font-family:var(--f-cond);font-style:normal;font-weight:800;font-size:13.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gc);display:flex;align-items:center;gap:8px}
+.grp h3::before{font-size:11px;letter-spacing:0}
+.grp-gen h3::before{content:"●"}.grp-sup h3::before{content:"▲"}.grp-inf h3::before{content:"▼"}
 .grp h3 .cnt{font-style:normal;font-weight:500;color:var(--ui-muted);letter-spacing:0;text-transform:none;font-family:var(--f-ui)}
 .empty{font-size:12.5px;color:var(--ui-muted);margin:0 0 6px}
 .row{display:grid;grid-template-columns:54px 122px minmax(0,1fr) auto;grid-template-areas:"q t d x" "z z p n";gap:6px 8px;
@@ -836,7 +840,7 @@ function renderEditor(){
         </div>
       </div>
       ${GROUPS.map(([g,label])=>{const rs=v.righe.filter(r=>r.g===g);
-        return `<div class="grp"><h3>${label}<span class="cnt">${rs.length?rs.length+(rs.length===1?" riga":" righe"):""}</span></h3>
+        return `<div class="grp grp-${g}"><h3>${label}<span class="cnt">${rs.length?rs.length+(rs.length===1?" riga":" righe"):""}</span></h3>
           ${rs.length?rs.map(r=>rowEditor(r,vi)).join(""):`<p class="empty">Nessun trattamento.</p>`}
           <div class="addrow"><button class="btn small" data-act="addRow" data-v="${vi}" data-g="${g}" type="button">+ Trattamento</button><button class="btn small ghost" data-act="addPack" data-v="${vi}" data-g="${g}" type="button">+ Pacchetto promozione</button>
           ${g==="gen"&&vi>0&&!v.righe.some(r=>/Scansione intraorale/.test(r.desc))?`<button class="btn small ghost" data-act="addScan" data-v="${vi}" type="button">+ Scansione intraorale (omaggio)</button>`:""}
